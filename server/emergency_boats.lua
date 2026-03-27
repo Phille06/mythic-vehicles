@@ -10,7 +10,7 @@ RegisterNetEvent("Vehicles:Server:RequestEmergencyBoat", function(parkingSpace)
     local char = Fetch:Source(src):GetData("Character")
     local onDuty = Player(src).state.onDuty
     if char and (onDuty == "police" or onDuty == "ems") and (not boatCooldowns[onDuty] or boatCooldowns[onDuty] <= os.time()) then
-        Vehicles:SpawnTemp(source, boatModels[onDuty] or `predator`, parkingSpace.xyz, parkingSpace.w, function(veh, VIN)
+        Vehicles:SpawnTemp(source, boatModels[onDuty] or `predator`, "boat", parkingSpace.xyz, parkingSpace.w, function(veh, VIN)
             Vehicles.Keys:Add(src, VIN)
 
             Entity(veh).state.GroupKeys = onDuty

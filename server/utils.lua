@@ -1,37 +1,19 @@
-local _trailerModels = {
-    [`trailers`] = true,
-    [`trailers2`] = true,
-    [`trailers3`] = true,
-    [`tvtrailer`] = true,
-    [`trailers4`] = true,
-    [`boattrailer`] = true,
-    [`trailersmall`] = true,
-    [`tr2`] = true,
-    [`tr4`] = true,
-    [`tanker`] = true,
-    [`tanker2`] = true,
-    [`trflat`] = true,
-    [`trailerlogs`] = true,
-    [`trailerlarge`] = true,
-    [`proptrailer`] = true,
-    [`20fttrailer`] = true,
-}
-
-local CREATE_AUTOMOBILE = `CREATE_AUTOMOBILE`
-function CreateAutomobile(model, coords, heading)
-    if not _trailerModels[model] then
-        if not heading then heading = 0.0 end
-        local veh = Citizen.InvokeNative(CREATE_AUTOMOBILE, model, coords.x, coords.y, coords.z, heading + 0.0)
-        if DoesEntityExist(veh) then
+function CreateAutomobile(type, model, coords, heading)
+    if not heading then heading = 0.0 end
+    if model ~= nil then
+        if type then
+            local veh = CreateVehicleServerSetter(model, type, coords.x, coords.y, coords.z, heading)
+            print("Created Vehicle with model: " .. tostring(model) .. " at coords: " .. tostring(coords) .. " with heading: " .. tostring(heading) .. " and modeltype: " .. tostring(type))
+            if DoesEntityExist(veh) then
+                return veh
+            end
+        else
+            local veh = CreateVehicle(model, coords.x, coords.y, coords.z, heading + 0.0, true, true)
+            while not DoesEntityExist(veh) do Wait(10) end
             return veh
         end
-        return nil
-    else
-        local veh = CreateVehicle(model, coords.x, coords.y, coords.z + 0.2, heading + 0.0, true, true)
-        while not DoesEntityExist(veh) do Wait(10) end
-        TriggerClientEvent("Vehicles:Client:SetDespawnStuff", -1, veh)
-        return veh
     end
+    return nil
 end
 
 function ParseImpoundData(fine, hold, impounder)

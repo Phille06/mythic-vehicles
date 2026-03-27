@@ -27,9 +27,9 @@ function RegisterCallbacks()
     end)
 
     Callbacks:RegisterClientCallback('Vehicles:Admin:GetVehicleSpawnData', function(model, cb)
-        if LocalPlayer.state.loggedIn and IsModelValid(model) then
+        if LocalPlayer.state.loggedIn and IsModelValid(GetHashKey(model)) then
             local spawnLocation = GetOffsetFromEntityInWorldCoords(GLOBAL_PED, 2.0, 2.0, 0.0)
-            return cb(spawnLocation, GetEntityHeading(GLOBAL_PED))
+            return cb(spawnLocation, GetEntityHeading(GLOBAL_PED), GetVehicleClassFromName(model))
         end
         cb(false)
     end)

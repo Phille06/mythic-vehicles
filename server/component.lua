@@ -436,7 +436,7 @@ VEHICLE = {
         Spawn = function(self, source, VIN, coords, heading, cb)
             Vehicles.Owned:GetVIN(VIN, function(vehicle)
                 if vehicle and not Vehicles.Owned:GetActive(VIN) then
-                    local spawnedVehicle = CreateAutomobile(vehicle.Vehicle, coords, (heading and heading + 0.0 or 0.0))
+                    local spawnedVehicle = CreateAutomobile(vehicle.ModelType, vehicle.Vehicle, coords, (heading and heading + 0.0 or 0.0))
                     if spawnedVehicle then
                         -- Set State
                         local vehState = Entity(spawnedVehicle).state
@@ -760,9 +760,9 @@ VEHICLE = {
         end,
     },
 
-    SpawnTemp = function(self, source, model, coords, heading, cb, vehicleInfoData, properties, preDamage, suppliedPlate,
+    SpawnTemp = function(self, source, model, modelType, coords, heading, cb, vehicleInfoData, properties, preDamage, suppliedPlate,
                          suppliedVIN)
-        local spawnedVehicle = CreateAutomobile(model, coords, heading)
+        local spawnedVehicle = CreateAutomobile(modelType, model, coords, heading)
         local vehState = Entity(spawnedVehicle).state
         local plate = suppliedPlate or Vehicles.Identification.Plate:Generate(true)
         vehState.VIN = suppliedVIN or Vehicles.Identification.VIN:GenerateLocal()

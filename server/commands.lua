@@ -5,10 +5,23 @@ function RegisterChatCommands()
 		Callbacks:ClientCallback(
 			source,
 			"Vehicles:Admin:GetVehicleSpawnData",
-			vehModel,
-			function(spawnCoords, spawnHeading)
+			args[1],
+			function(spawnCoords, spawnHeading, class)
+				local modelType = "automobile"
+				if class == 8 or class == 13 then
+					modelType = "bike"
+				elseif class == 14 then
+					modelType = "boat"
+				elseif class == 15 then
+					modelType = "heli"
+				elseif class == 16 then
+					modelType = "plane"
+				elseif class == 21 then
+					modelType = "train"
+				end
+				
 				if spawnCoords then
-					Vehicles:SpawnTemp(source, vehModel, spawnCoords, spawnHeading, function(veh, VIN)
+					Vehicles:SpawnTemp(source, vehModel, modelType, spawnCoords, spawnHeading, function(veh, VIN)
 						Vehicles.Keys:Add(source, VIN)
 					end)
 				else
