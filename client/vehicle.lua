@@ -902,6 +902,47 @@ AddEventHandler("Vehicles:Client:StartUp", function()
 		end
 	end)
 
+	Callbacks:RegisterClientCallback("Vehicles:LockpickPD", function(data, cb)
+		if _characterLoaded then
+			if not (LocalPlayer.state.onDuty == "police" or LocalPlayer.state.onDuty == "prison") then
+				Notification:Error("You cannot do this you criminal!")
+				return cb(false, false)
+			end
+			if VEHICLE_INSIDE then
+				if VEHICLE_SEAT == -1 then
+					local vehClass = _vehicleClasses[Vehicles.Class:Get(VEHICLE_INSIDE)]
+					if vehClass?.advLockpick then
+						Vehicles:Lockpick(vehClass.advLockpick.interior, data, cb)
+					else
+						Notification:Error("Cannot Lockpick This Vehicle")
+					end
+				else
+					cb(false, false)
+				end
+			else
+				local target = Targeting:GetEntityPlayerIsLookingAt()
+				if
+					target
+					and target.entity
+					and DoesEntityExist(target.entity)
+					and IsEntityAVehicle(target.entity)
+					and #(GetEntityCoords(target.entity) - GetEntityCoords(GLOBAL_PED)) <= 2.0
+				then
+					local vehClass = _vehicleClasses[Vehicles.Class:Get(target.entity)]
+					if vehClass?.advLockpick then
+						Vehicles:LockpickExterior(vehClass.advLockpick.exterior, data, target.entity, cb)
+					else
+						Notification:Error("Cannot Lockpick This Vehicle")
+					end
+				else
+					cb(false, false)
+				end
+			end
+		else
+			cb(false, false)
+		end
+	end)
+
 	Callbacks:RegisterClientCallback("Vehicles:Hack", function(data, cb)
 		if _characterLoaded then
 			if VEHICLE_INSIDE then

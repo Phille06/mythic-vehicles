@@ -35,6 +35,24 @@ function RegisterItemUses()
 		end)
 	end)
 
+	Inventory.Items:RegisterUse("lockpick_pd", "Vehicles", function(source, slot, itemData)
+		SetTimeout(500, function()
+			Callbacks:ClientCallback(source, "Vehicles:LockpickPD", true, function(using, success)
+				if using then
+					local newValue = slot.CreateDate - (60 * 60 * 24)
+					if success then
+						newValue = slot.CreateDate - (60 * 60 * 12)
+					end
+					if (os.time() - itemData.durability >= newValue) then
+						Inventory.Items:RemoveId(slot.Owner, slot.invType, slot)
+					else
+						Inventory:SetItemCreateDate(slot.id, newValue)
+					end
+				end
+			end)
+		end)
+	end)
+
 	Inventory.Items:RegisterUse("electronics_kit", "Vehicles", function(source, slot, itemData)
 		SetTimeout(500, function()
 			Callbacks:ClientCallback(source, "Vehicles:Hack", true, function(using, success)

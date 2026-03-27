@@ -436,119 +436,120 @@ VEHICLE = {
         Spawn = function(self, source, VIN, coords, heading, cb)
             Vehicles.Owned:GetVIN(VIN, function(vehicle)
                 if vehicle and not Vehicles.Owned:GetActive(VIN) then
-                    local spawnedVehicle = CreateAutomobile(vehicle.ModelType, vehicle.Vehicle, coords, (heading and heading + 0.0 or 0.0))
-                    if spawnedVehicle then
-                        -- Set State
-                        local vehState = Entity(spawnedVehicle).state
+                    CreateAutomobile(vehicle.ModelType, vehicle.Vehicle, coords, (heading and heading + 0.0 or 0.0), source, function(spawnedVehicle)
+                        if spawnedVehicle then
+                            -- Set State
+                            local vehState = Entity(spawnedVehicle).state
 
-                        vehState.ServerEntity = spawnedVehicle
-                        vehState.Owned = true
-                        vehState.Owner = vehicle.Owner
-                        vehState.PlayerDriven = true
-                        vehState.VIN = vehicle.VIN
-                        vehState.RegisteredPlate = vehicle.RegisteredPlate
-                        vehState.Fuel = vehicle.Fuel
-                        vehState.Locked = true
-                        SetVehicleDoorsLocked(spawnedVehicle, 2)
+                            vehState.ServerEntity = spawnedVehicle
+                            vehState.Owned = true
+                            vehState.Owner = vehicle.Owner
+                            vehState.PlayerDriven = true
+                            vehState.VIN = vehicle.VIN
+                            vehState.RegisteredPlate = vehicle.RegisteredPlate
+                            vehState.Fuel = vehicle.Fuel
+                            vehState.Locked = true
+                            SetVehicleDoorsLocked(spawnedVehicle, 2)
 
-                        vehState.GroupKeys = false
-                        vehState.GovAssigned = vehicle.GovAssigned or false
-                        if vehicle.Owner then
-                            local assigned = vehicle.GovAssigned
-                            local hasAssignment = assigned and #assigned > 0
-                            if not hasAssignment then
-                                if vehicle.Owner.Id == 'police' then
-                                    vehState.GroupKeys = 'police'
-                                elseif vehicle.Owner.Id == 'ems' then
-                                    vehState.GroupKeys = 'ems'
+                            vehState.GroupKeys = false
+                            vehState.GovAssigned = vehicle.GovAssigned or false
+                            if vehicle.Owner then
+                                local assigned = vehicle.GovAssigned
+                                local hasAssignment = assigned and #assigned > 0
+                                if not hasAssignment then
+                                    if vehicle.Owner.Id == 'police' then
+                                        vehState.GroupKeys = 'police'
+                                    elseif vehicle.Owner.Id == 'ems' then
+                                        vehState.GroupKeys = 'ems'
+                                    end
                                 end
                             end
-                        end
 
-                        vehState.Make = vehicle.Make
-                        vehState.Model = vehicle.Model
-                        vehState.Class = vehicle.Class
-                        vehState.Value = vehicle.Value
+                            vehState.Make = vehicle.Make
+                            vehState.Model = vehicle.Model
+                            vehState.Class = vehicle.Class
+                            vehState.Value = vehicle.Value
 
-                        vehState.Damage = vehicle.Damage
-                        vehState.DamagedParts = vehicle.DamagedParts
-                        vehState.Mileage = vehicle.Mileage
+                            vehState.Damage = vehicle.Damage
+                            vehState.DamagedParts = vehicle.DamagedParts
+                            vehState.Mileage = vehicle.Mileage
 
-                        vehState.WheelFitment = vehicle.WheelFitment
+                            vehState.WheelFitment = vehicle.WheelFitment
 
-                        if vehicle.Polish and vehicle.Polish.Expires and vehicle.Polish.Expires > os.time() then
-                            vehState.Polish = vehicle.Polish
-                        end
-
-                        if vehicle.Harness and vehicle.Harness > 0 then
-                            vehState.Harness = vehicle.Harness
-                        end
-
-                        if vehicle.Nitrous ~= nil then
-                            vehState.Nitrous = vehicle.Nitrous
-                        end
-
-                        if vehicle.RegisteredPlate then
-                            if vehicle.FakePlate then
-                                vehState.Plate = vehicle.FakePlate
-                                vehState.FakePlate = vehicle.FakePlate
-                                SetVehicleNumberPlateText(spawnedVehicle, vehicle.FakePlate)
-                            else
-                                vehState.Plate = vehicle.RegisteredPlate
-                                SetVehicleNumberPlateText(spawnedVehicle, vehicle.RegisteredPlate)
+                            if vehicle.Polish and vehicle.Polish.Expires and vehicle.Polish.Expires > os.time() then
+                                vehState.Polish = vehicle.Polish
                             end
-                        else -- Its a heli or boat
-                            SetVehicleNumberPlateText(spawnedVehicle, '')
-                        end
 
-                        if vehicle.DirtLevel and type(vehicle.DirtLevel) == 'number' then
-                            SetVehicleDirtLevel(spawnedVehicle, vehicle.DirtLevel + 0.0)
-                        end
-
-                        if vehicle.NeonsDisabled then
-                            vehState.neonsDisabled = true
-                        end
-
-                        if vehicle.ForcedAudio then
-                            vehState.ForcedAudio = vehicle.ForcedAudio
-                        end
-
-                        vehState.Trailer = GetVehicleType(spawnedVehicle) == 'trailer'
-
-                        if vehicle.FirstSpawn and not vehicle.Properties then
-                            VEHICLES_PENDING_PROPERTIES[spawnedVehicle] = true
-                            vehState.awaitingProperties = {
-                                needInit = true,
-                            }
-                        elseif vehicle.Properties then
-                            vehState.awaitingProperties = {
-                                needInit = false,
-                                properties = vehicle.Properties,
-                                damage = vehicle.Damage,
-                            }
-                        end
-
-                        local vehicleStore = DataStore:CreateStore('Vehicle', vehicle.VIN, vehicle)
-                        vehicleStore:SetData('EntityId', spawnedVehicle)
-                        ACTIVE_OWNED_VEHICLES[vehicle.VIN] = vehicleStore
-                        cb(true, vehicle, spawnedVehicle)
-
-                        if source and source > 0 then
-                            -- Active Owner Stuff
-                            if not ACTIVE_OWNED_VEHICLES_SPAWNERS[source] then
-                                ACTIVE_OWNED_VEHICLES_SPAWNERS[source] = {}
+                            if vehicle.Harness and vehicle.Harness > 0 then
+                                vehState.Harness = vehicle.Harness
                             end
-                            table.insert(ACTIVE_OWNED_VEHICLES_SPAWNERS[source], vehicle.VIN)
-                        end
 
-                        -- Fix?
-                        local inVeh = GetPedInVehicleSeat(spawnedVehicle, -1)
-                        if inVeh and DoesEntityExist(inVeh) then
-                            DeleteEntity(inVeh)
+                            if vehicle.Nitrous ~= nil then
+                                vehState.Nitrous = vehicle.Nitrous
+                            end
+
+                            if vehicle.RegisteredPlate then
+                                if vehicle.FakePlate then
+                                    vehState.Plate = vehicle.FakePlate
+                                    vehState.FakePlate = vehicle.FakePlate
+                                    SetVehicleNumberPlateText(spawnedVehicle, vehicle.FakePlate)
+                                else
+                                    vehState.Plate = vehicle.RegisteredPlate
+                                    SetVehicleNumberPlateText(spawnedVehicle, vehicle.RegisteredPlate)
+                                end
+                            else -- Its a heli or boat
+                                SetVehicleNumberPlateText(spawnedVehicle, '')
+                            end
+
+                            if vehicle.DirtLevel and type(vehicle.DirtLevel) == 'number' then
+                                SetVehicleDirtLevel(spawnedVehicle, vehicle.DirtLevel + 0.0)
+                            end
+
+                            if vehicle.NeonsDisabled then
+                                vehState.neonsDisabled = true
+                            end
+
+                            if vehicle.ForcedAudio then
+                                vehState.ForcedAudio = vehicle.ForcedAudio
+                            end
+
+                            vehState.Trailer = GetVehicleType(spawnedVehicle) == 'trailer'
+
+                            if vehicle.FirstSpawn and not vehicle.Properties then
+                                VEHICLES_PENDING_PROPERTIES[spawnedVehicle] = true
+                                vehState.awaitingProperties = {
+                                    needInit = true,
+                                }
+                            elseif vehicle.Properties then
+                                vehState.awaitingProperties = {
+                                    needInit = false,
+                                    properties = vehicle.Properties,
+                                    damage = vehicle.Damage,
+                                }
+                            end
+
+                            local vehicleStore = DataStore:CreateStore('Vehicle', vehicle.VIN, vehicle)
+                            vehicleStore:SetData('EntityId', spawnedVehicle)
+                            ACTIVE_OWNED_VEHICLES[vehicle.VIN] = vehicleStore
+                            cb(true, vehicle, spawnedVehicle)
+
+                            if source and source > 0 then
+                                -- Active Owner Stuff
+                                if not ACTIVE_OWNED_VEHICLES_SPAWNERS[source] then
+                                    ACTIVE_OWNED_VEHICLES_SPAWNERS[source] = {}
+                                end
+                                table.insert(ACTIVE_OWNED_VEHICLES_SPAWNERS[source], vehicle.VIN)
+                            end
+
+                            -- Fix?
+                            local inVeh = GetPedInVehicleSeat(spawnedVehicle, -1)
+                            if inVeh and DoesEntityExist(inVeh) then
+                                DeleteEntity(inVeh)
+                            end
+                        else
+                            cb(false)
                         end
-                    else
-                        cb(false)
-                    end
+                    end)
                 else
                     cb(false)
                 end
@@ -762,47 +763,48 @@ VEHICLE = {
 
     SpawnTemp = function(self, source, model, modelType, coords, heading, cb, vehicleInfoData, properties, preDamage, suppliedPlate,
                          suppliedVIN)
-        local spawnedVehicle = CreateAutomobile(modelType, model, coords, heading)
-        local vehState = Entity(spawnedVehicle).state
         local plate = suppliedPlate or Vehicles.Identification.Plate:Generate(true)
-        vehState.VIN = suppliedVIN or Vehicles.Identification.VIN:GenerateLocal()
-        vehState.Owned = false
-        vehState.Locked = false
-        vehState.PlayerDriven = true
-        vehState.Fuel = math.random(50, 100)
-        vehState.Plate = plate
+        local VIN = suppliedVIN or Vehicles.Identification.VIN:GenerateLocal()
 
+        CreateAutomobile(modelType, model, coords, heading, source, function(spawnedVehicle)
+            if not spawnedVehicle or not DoesEntityExist(spawnedVehicle) then return end
+            local vehState = Entity(spawnedVehicle).state
+            vehState.VIN = VIN
+            vehState.Owned = false
+            vehState.Locked = false
+            vehState.PlayerDriven = true
+            vehState.Fuel = math.random(50, 100)
+            vehState.Plate = plate
 
-        if vehicleInfoData then
-            vehState.Make = vehicleInfoData.Make
-            vehState.Model = vehicleInfoData.Model
-            vehState.Class = vehicleInfoData.Class
-            vehState.Value = vehicleInfoData.Value
-        end
-
-        vehState.Trailer = GetVehicleType(spawnedVehicle) == 'trailer'
-
-        vehState.VEH_IGNITION = false
-
-        if properties or preDamage then
-            vehState.awaitingProperties = {
-                needInit = false,
-                properties = properties,
-                damage = preDamage,
-            }
-
-            if preDamage then
-                vehState.Damage = preDamage
+            if vehicleInfoData then
+                vehState.Make = vehicleInfoData.Make
+                vehState.Model = vehicleInfoData.Model
+                vehState.Class = vehicleInfoData.Class
+                vehState.Value = vehicleInfoData.Value
             end
-        end
 
-        SetVehicleNumberPlateText(spawnedVehicle, plate)
+            vehState.Trailer = GetVehicleType(spawnedVehicle) == 'trailer'
+            vehState.VEH_IGNITION = false
 
-        local inVeh = GetPedInVehicleSeat(spawnedVehicle, -1)
-        if inVeh and DoesEntityExist(inVeh) then
-            DeleteEntity(inVeh)
-        end
-        cb(spawnedVehicle, vehState.VIN, plate)
+            if properties or preDamage then
+                vehState.awaitingProperties = {
+                    needInit = false,
+                    properties = properties,
+                    damage = preDamage,
+                }
+                if preDamage then
+                    vehState.Damage = preDamage
+                end
+            end
+
+            SetVehicleNumberPlateText(spawnedVehicle, plate)
+
+            local inVeh = GetPedInVehicleSeat(spawnedVehicle, -1)
+            if inVeh and DoesEntityExist(inVeh) then
+                DeleteEntity(inVeh)
+            end
+            cb(spawnedVehicle, VIN, plate)
+        end)
     end,
     Delete = function(self, vehicleId, cb)
         if DoesEntityExist(vehicleId) and GetEntityType(vehicleId) == 2 then
