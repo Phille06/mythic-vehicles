@@ -109,7 +109,7 @@ RegisterNetEvent('Vehicles:Server:PlayerSetProperties', function(veh, properties
     end
 end)
 
-local tempVehicleStoreShit = { '_id', 'VIN', 'EntityId', 'LastSave', 'Flags', 'Strikes' }
+local tempVehicleStoreShit = { '_id', 'VIN', 'EntityId', 'LastSave', 'Flags', 'Strikes', 'ModelType' }
 
 function SaveVehicle(VIN)
     local veh = Vehicles.Owned:GetActive(VIN)
@@ -236,53 +236,46 @@ VEHICLE = {
         end,
     },
     Owned = {
-        AddToCharacter = function(self, charSID, vehicleHash, vehicleType, infoData, cb, properties, defaultStorage,
-                                  suppliedVIN)
+        AddToCharacter = function(self, charSID, vehicleHash, vehicleType, modelType, infoData, cb, properties, defaultStorage, suppliedVIN)
             Vehicles.Owned:Add({
                 Type = 0,
                 Id = charSID
-            }, vehicleHash, vehicleType, infoData, cb, properties, defaultStorage, suppliedVIN)
+            }, vehicleHash, vehicleType, modelType, infoData, cb, properties, defaultStorage, suppliedVIN)  -- Added modelType
         end,
 
-        AddToFleet = function(self, jobId, jobWorkplace, vehicleLevel, vehicleHash, vehicleType, infoData, cb, properties,
-                              qual)
+        AddToFleet = function(self, jobId, jobWorkplace, vehicleLevel, vehicleHash, vehicleType, modelType, infoData, cb, properties, qual)
             if not properties then
                 properties = false
             end
-
+        
             local defaultStorage = false
             if type(vehicleType) ~= 'number' or vehicleType < 0 or vehicleType > 2 then
                 vehicleType = 0
             end
-
-            -- Get the fleet HQ to store vehicles in by default
+        
+            -- Get the fleet HQ...
             for storageId, storageData in pairs(_vehicleStorage) do
                 if storageData.fleet then
                     for k, v in pairs(storageData.fleet) do
                         if storageData.vehType == vehicleType and v.JobId == jobId and v.HQ then
-                            defaultStorage = {
-                                Type = 1,
-                                Id = storageId,
-                            }
-
+                            defaultStorage = { Type = 1, Id = storageId }
                             break
                         end
                     end
                 end
             end
-
+        
             Vehicles.Owned:Add({
                 Type = 1,
                 Id = jobId,
                 Workplace = jobWorkplace and jobWorkplace or false,
                 Level = (type(vehicleLevel) == 'number') and vehicleLevel or 0,
                 Qualification = qual,
-            }, vehicleHash, vehicleType, infoData, cb, properties, defaultStorage)
+            }, vehicleHash, vehicleType, modelType, infoData, cb, properties, defaultStorage)  -- Added modelType here too
         end,
 
         -- !!! Should not be used externally
-        Add = function(self, ownerData, vehicleHash, vehicleType, infoData, cb, properties, defaultStorageData,
-                       suppliedVIN)
+        Add = function(self, ownerData, vehicleHash, vehicleType, modelType, infoData, cb, properties, defaultStorageData, suppliedVIN)
             if type(vehicleType) ~= 'number' or vehicleType < 0 or vehicleType > 2 then
                 vehicleType = 0
             end
@@ -309,6 +302,7 @@ VEHICLE = {
                 local doc = {
                     Type = vehicleType,
                     Vehicle = vehicleHash,
+                    ModelType = modelType,
 
                     VIN = VIN,
                     RegisteredPlate = plate,
@@ -436,7 +430,13 @@ VEHICLE = {
         Spawn = function(self, source, VIN, coords, heading, cb)
             Vehicles.Owned:GetVIN(VIN, function(vehicle)
                 if vehicle and not Vehicles.Owned:GetActive(VIN) then
-                    CreateAutomobile(vehicle.ModelType, vehicle.Vehicle, coords, (heading and heading + 0.0 or 0.0), source, function(spawnedVehicle)
+                    local modelTypeToUse = vehicle.ModelType or vehicle.Type or 0
+
+                    if not vehicle.ModelType then
+                        Logger:Trace('Vehicles', 'ModelType missing for VIN ' .. VIN .. ' (legacy vehicle) - using fallback')
+                    end
+
+                    CreateAutomobile(modelTypeToUse, vehicle.Vehicle, coords, (heading and heading + 0.0 or 0.0), source, function(spawnedVehicle)
                         if spawnedVehicle then
                             -- Set State
                             local vehState = Entity(spawnedVehicle).state
@@ -959,9 +959,9 @@ AddEventHandler('entityRemoved', function(entity)
             Wait(1000)
 
             if isLocal then
-                Vehicles:SpawnTemp(-1, vehModel, coords, heading, function(vehicleId)
+                Vehicles:SpawnTemp(-1, vehModel, nil, coords, heading, function(vehicleId)
                     SetVehicleBodyHealth(vehicleId, bodyHealth + 0.0)
-
+                
                     ApplyOldVehicleState(vehicleId, fuel, damage, damagedParts, mileage, engineHealth, bodyHealth,
                         isBlownUp, _savedVehiclePropertiesClusterfuck[VIN])
                 end, false, false, false, vehPlate, VIN)
